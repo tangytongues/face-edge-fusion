@@ -7,6 +7,8 @@ import { toast } from "sonner";
 import { ImageUploader } from "@/components/ImageUploader";
 import { FilterSelector } from "@/components/FilterSelector";
 import { AddFaceDialog } from "@/components/AddFaceDialog";
+import { WebcamCapture } from "@/components/WebcamCapture";
+import { LiveProcessor } from "@/components/LiveProcessor";
 import { applyEdgeFilter, EdgeFilterType } from "@/lib/edgeDetection";
 import { loadModels, detectFaces, createLabeledDescriptors, createFaceMatcher, drawDetections } from "@/lib/faceRecognition";
 import { supabase } from "@/integrations/supabase/client";
@@ -20,6 +22,8 @@ const Index = () => {
   const [processing, setProcessing] = useState(false);
   const [knownFaces, setKnownFaces] = useState<any[]>([]);
   const [modelsReady, setModelsReady] = useState(false);
+  const [webcamActive, setWebcamActive] = useState(false);
+  const [inputMode, setInputMode] = useState<"upload" | "webcam" | "live">("upload");
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
@@ -62,6 +66,12 @@ const Index = () => {
     
     img.src = url;
     toast.success("Image loaded");
+  };
+
+  const handleWebcamCapture = (img: HTMLImageElement) => {
+    setUploadedImage(img);
+    setProcessedCanvas(null);
+    toast.success("Image captured");
   };
 
   const processImage = async () => {
@@ -252,9 +262,53 @@ const Index = () => {
 
           {/* Main Area */}
           <div className="lg:col-span-3 space-y-4">
-            <ImageUploader onImageUpload={handleImageUpload} />
+            {/* Input Mode Selector */}
+            <div className="flex gap-2">
+              <Button
+                variant={inputMode === "upload" ? "default" : "outline"}
+                onClick={() => setInputMode("upload")}
+                className="flex-1"
+              >
+                Upload Image
+              </Button>
+              <Button
+                variant={inputMode === "webcam" ? "default" : "outline"}
+                onClick={() => setInputMode("webcam")}
+                className="flex-1"
+              >
+                Webcam Capture
+              </Button>
+              <Button
+                variant={inputMode === "live" ? "default" : "outline"}
+                onClick={() => setInputMode("live")}
+                className="flex-1"
+              >
+                Live Processing
+              </Button>
+            </div>
 
-            {uploadedImage && (
+            {inputMode === "upload" && (
+              <ImageUploader onImageUpload={handleImageUpload} />
+            )}
+
+            {inputMode === "webcam" && (
+              <WebcamCapture
+                onCapture={handleWebcamCapture}
+                isActive={webcamActive}
+                onToggle={setWebcamActive}
+              />
+            )}
+
+            {inputMode === "live" && (
+              <LiveProcessor
+                mode={mode}
+                selectedFilter={selectedFilter}
+                knownFaces={knownFaces}
+                modelsReady={modelsReady}
+              />
+            )}
+
+            {inputMode !== "live" && uploadedImage && (
               <>
                 <div className="flex gap-2">
                   <Button onClick={processImage} disabled={processing} className="flex-1">
