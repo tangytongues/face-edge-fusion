@@ -5,22 +5,40 @@ let modelsLoaded = false;
 export const loadModels = async () => {
   if (modelsLoaded) return;
   
-  const MODEL_URL = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.12/model';
-  
-  await Promise.all([
-    faceapi.nets.ssdMobilenetv1.loadFromUri(MODEL_URL),
-    faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
-    faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL),
-  ]);
-  
-  modelsLoaded = true;
+  try {
+    const MODEL_URL = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.12/model';
+    
+    await Promise.all([
+      faceapi.nets.ssdMobilenetv1.loadFromUri(MODEL_URL),
+      faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
+      faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL),
+    ]);
+    
+    modelsLoaded = true;
+    console.log('Face recognition models loaded successfully');
+  } catch (error) {
+    console.error('Error loading face recognition models:', error);
+    throw error;
+  }
 };
 
 export const detectFaces = async (imageElement: HTMLImageElement) => {
-  return await faceapi
-    .detectAllFaces(imageElement)
-    .withFaceLandmarks()
-    .withFaceDescriptors();
+  try {
+    if (!modelsLoaded) {
+      throw new Error('Models not loaded yet');
+    }
+    
+    const detections = await faceapi
+      .detectAllFaces(imageElement)
+      .withFaceLandmarks()
+      .withFaceDescriptors();
+    
+    console.log(`Detected ${detections.length} face(s)`);
+    return detections;
+  } catch (error) {
+    console.error('Error detecting faces:', error);
+    throw error;
+  }
 };
 
 export const createLabeledDescriptors = (name: string, descriptors: Float32Array[]) => {

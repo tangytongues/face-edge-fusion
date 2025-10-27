@@ -32,9 +32,18 @@ const Index = () => {
         await loadModels();
         setModelsReady(true);
         toast.success("AI models loaded successfully");
+        
+        // Check for WebGL support
+        const canvas = document.createElement('canvas');
+        const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+        if (!gl) {
+          toast.info("WebGL not available - using CPU mode (slower performance)", {
+            duration: 5000
+          });
+        }
       } catch (error) {
         console.error("Error loading models:", error);
-        toast.error("Failed to load AI models");
+        toast.error("Failed to load AI models. Please refresh the page.");
       }
     };
     init();
@@ -85,15 +94,16 @@ const Index = () => {
     try {
       if (mode === "recognition") {
         if (!modelsReady) {
-          toast.error("AI models are still loading...");
+          toast.error("AI models are still loading. Please wait...");
           setProcessing(false);
           return;
         }
 
+        console.log("Processing image for face detection...");
         const detections = await detectFaces(uploadedImage);
 
         if (!detections || detections.length === 0) {
-          toast.info("No faces detected");
+          toast.info("No faces detected in the image. Try a clearer photo with visible faces.");
           setProcessing(false);
           return;
         }
